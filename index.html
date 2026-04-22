@@ -646,6 +646,33 @@
     border-bottom-color: var(--accent);
   }
 
+  /* Prefixed input (for @ symbol on Instagram field) */
+  .input-prefix {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    border-bottom: 1px solid var(--rule);
+    transition: border-color 0.3s ease;
+  }
+
+  .input-prefix:focus-within {
+    border-bottom-color: var(--accent);
+  }
+
+  .input-prefix-symbol {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    color: var(--ink-faint);
+    padding: 8px 2px 12px 0;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .input-prefix input {
+    border-bottom: none !important;
+    padding-left: 4px !important;
+  }
+
   .form-field input::placeholder,
   .form-field textarea::placeholder {
     color: var(--ink-faint);
@@ -1017,7 +1044,10 @@
         </div>
         <div class="form-field">
           <label for="instagram">Instagram</label>
-          <input type="text" id="instagram" name="instagram" required placeholder="@yourhandle" />
+          <div class="input-prefix">
+            <span class="input-prefix-symbol" aria-hidden="true">@</span>
+            <input type="text" id="instagram" name="instagram" required placeholder="yourhandle" autocapitalize="none" autocorrect="off" spellcheck="false" />
+          </div>
         </div>
 
         <div class="form-field-group">
@@ -1058,7 +1088,7 @@
 
         <div class="form-field">
           <label for="notes">Anything we should know?</label>
-          <textarea id="notes" name="notes" placeholder="How'd you hear about us? Bringing anyone? Going to ask the hard questions?"></textarea>
+          <textarea id="notes" name="notes" placeholder="How'd you hear about us? Are you coming with anyone? Any contributions, comments, suggestions?"></textarea>
         </div>
 
         <input type="hidden" id="city" name="city" />
@@ -1162,6 +1192,20 @@
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
+  // Strip leading @ or URL prefix as user types/pastes, so the field always shows a clean handle
+  const igInput = document.getElementById('instagram');
+  igInput.addEventListener('input', (e) => {
+    let v = e.target.value;
+    // Only rewrite if we detect something that needs cleaning — avoids fighting the caret
+    if (/^@|instagram\.com|https?:\/\//i.test(v)) {
+      v = v.replace(/^https?:\/\//i, '')
+           .replace(/^(www\.)?instagram\.com\//i, '')
+           .replace(/^@+/, '')
+           .split(/[/?#]/)[0];
+      e.target.value = v;
+    }
+  });
+
   // Turnstile callbacks (referenced by data-callback / data-expired-callback on the widget)
   let captchaToken = null;
   window.onCaptchaSuccess = (token) => { captchaToken = token; };
@@ -1189,11 +1233,22 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving...';
 
+    // Normalize Instagram input — strip URL prefixes, @, trailing slashes, query strings.
+    // Handles: "@kyle", "kyle", "instagram.com/kyle", "https://www.instagram.com/kyle/?hl=en"
+    const sanitizeHandle = (raw) => {
+      let h = (raw || '').trim();
+      h = h.replace(/^https?:\/\//i, '');
+      h = h.replace(/^(www\.)?instagram\.com\//i, '');
+      h = h.replace(/^@+/, '');
+      h = h.split(/[/?#]/)[0]; // drop trailing path, query, or fragment
+      return h.trim();
+    };
+
     const payload = {
       name: form.name.value.trim(),
       email: form.email.value.trim(),
       phone: form.phone.value.trim(),
-      instagram: form.instagram.value.trim(),
+      instagram: sanitizeHandle(form.instagram.value),
       roles: checkedRoles,
       notes: form.notes.value.trim(),
       city: form.city.value,
