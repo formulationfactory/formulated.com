@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Cloudflare Turnstile - swap YOUR_TURNSTILE_SITE_KEY in the form below with your site key -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   :root {
     --bg: #f5f1e8;
@@ -527,6 +529,127 @@
     font-family: 'Fraunces', serif;
   }
 
+  /* Checkbox group for role selection */
+  .form-field-group {
+    margin-bottom: 32px;
+  }
+
+  .form-field-group > label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+  }
+
+  .form-field-group .group-hint {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-faint);
+    margin-left: 8px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 20px;
+    padding-top: 4px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 4px 0;
+    user-select: none;
+  }
+
+  .checkbox-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .checkbox-box {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .checkbox-box::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 1px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .checkbox-item:hover .checkbox-box {
+    border-color: var(--accent);
+  }
+
+  .checkbox-item input[type="checkbox"]:checked + .checkbox-box {
+    border-color: var(--accent);
+  }
+
+  .checkbox-item input[type="checkbox"]:checked + .checkbox-box::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .checkbox-item input[type="checkbox"]:focus-visible + .checkbox-box {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .checkbox-label {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  /* Captcha container */
+  .captcha-wrap {
+    margin: 24px 0 8px;
+    display: flex;
+    justify-content: center;
+    min-height: 65px;
+  }
+
+  .captcha-wrap:empty::before {
+    content: "Verification will load here";
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 20px;
+    border: 1px dashed var(--rule);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+  }
+
   .form-submit {
     width: 100%;
     background: var(--ink);
@@ -631,6 +754,11 @@
     .modal { padding: 40px 28px; }
     .modal h3 { font-size: 36px; }
 
+    .checkbox-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
     .section-head {
       flex-direction: column;
       align-items: flex-start;
@@ -658,7 +786,7 @@
     <div class="container">
       <div class="hero-label">The Formulated Series</div>
       <h1>Ten cities.<br>Ten Saturdays.<br>One <em>summer.</em></h1>
-      <p class="hero-sub">A cross-country gathering for people who care about what goes in their body. Free to attend. Bring nothing but yourself.</p>
+      <p class="hero-sub">A day dedicated to mental health, community, and connection. Featuring entrepreneurs, healthcare professionals, influencers, creators, athletes, musicians, and more. Free to attend.</p>
 
       <div class="hero-meta">
         <div class="hero-meta-item">
@@ -714,6 +842,10 @@
           <input type="text" id="name" name="name" required placeholder="Your full name" autocomplete="name" />
         </div>
         <div class="form-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="form-field">
           <label for="phone">Phone</label>
           <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 000-0000" autocomplete="tel" />
         </div>
@@ -721,6 +853,43 @@
           <label for="instagram">Instagram</label>
           <input type="text" id="instagram" name="instagram" required placeholder="@yourhandle" />
         </div>
+
+        <div class="form-field-group">
+          <label>Who are you? <span class="group-hint">Check all that apply</span></label>
+          <div class="checkbox-grid" id="rolesGrid">
+            <label class="checkbox-item">
+              <input type="checkbox" name="roles" value="entrepreneur" />
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Entrepreneur / Founder</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="roles" value="healthcare" />
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Healthcare Professional</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="roles" value="artist_influencer_creator" />
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Artist / Influencer / Creator</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="roles" value="athlete" />
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Athlete / Fitness Professional</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="roles" value="author_speaker_teacher" />
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Author / Speaker / Teacher</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="roles" value="other" />
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Something else (share below)</span>
+            </label>
+          </div>
+        </div>
+
         <div class="form-field">
           <label for="notes">Anything we should know?</label>
           <textarea id="notes" name="notes" placeholder="How'd you hear about us? Bringing anyone? Going to ask the hard questions?"></textarea>
@@ -728,6 +897,16 @@
 
         <input type="hidden" id="city" name="city" />
         <input type="hidden" id="date" name="date" />
+
+        <!-- Cloudflare Turnstile captcha.
+             TODO: Replace data-sitekey with your production Turnstile site key from dash.cloudflare.com -->
+        <div class="captcha-wrap">
+          <div class="cf-turnstile"
+               data-sitekey="YOUR_TURNSTILE_SITE_KEY"
+               data-theme="light"
+               data-callback="onCaptchaSuccess"
+               data-expired-callback="onCaptchaExpired"></div>
+        </div>
 
         <button type="submit" class="form-submit" id="submitBtn">Save my spot</button>
         <p class="form-footnote">By RSVPing, you agree to receive event details via text & email. Unsubscribe anytime.</p>
@@ -802,6 +981,10 @@
     formView.style.display = 'block';
     successView.classList.remove('active');
     form.reset();
+    captchaToken = null;
+    if (window.turnstile) {
+      try { window.turnstile.reset(); } catch (err) { /* widget not yet rendered */ }
+    }
   }
 
   function closeModal() {
@@ -813,22 +996,49 @@
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
+  // Turnstile callbacks (referenced by data-callback / data-expired-callback on the widget)
+  let captchaToken = null;
+  window.onCaptchaSuccess = (token) => { captchaToken = token; };
+  window.onCaptchaExpired = () => { captchaToken = null; };
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // Require at least one role checkbox
+    const checkedRoles = Array.from(form.querySelectorAll('input[name="roles"]:checked'))
+      .map(el => el.value);
+    if (checkedRoles.length === 0) {
+      alert('Please select at least one option for "Who are you?"');
+      return;
+    }
+
+    // Require captcha token (skip this gate in local preview if Turnstile hasn't been configured)
+    const turnstileEl = form.querySelector('.cf-turnstile');
+    const hasRealSiteKey = turnstileEl && turnstileEl.dataset.sitekey && turnstileEl.dataset.sitekey !== 'YOUR_TURNSTILE_SITE_KEY';
+    if (hasRealSiteKey && !captchaToken) {
+      alert('Please complete the verification check before submitting.');
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving...';
 
     const payload = {
       name: form.name.value.trim(),
+      email: form.email.value.trim(),
       phone: form.phone.value.trim(),
       instagram: form.instagram.value.trim(),
+      roles: checkedRoles,
       notes: form.notes.value.trim(),
       city: form.city.value,
       date: form.date.value,
+      turnstileToken: captchaToken,
       submittedAt: new Date().toISOString()
     };
 
-    // TODO: Wire this endpoint to your Klaviyo/n8n/backend
+    // TODO: Wire this endpoint to your Klaviyo/n8n/backend.
+    // On the server, verify payload.turnstileToken against
+    // https://challenges.cloudflare.com/turnstile/v0/siteverify using your secret key.
     // Example: await fetch('/api/rsvp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     console.log('RSVP payload:', payload);
 
